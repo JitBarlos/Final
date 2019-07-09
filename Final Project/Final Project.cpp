@@ -1,11 +1,15 @@
 #include <iostream>
+#include <cstring>
 #include <SFML\Graphics.hpp>
 #include <SFML\Graphics\Rect.hpp>
+
+float enemySpeed = 0.1;
 
 int main()
 {
 	sf::RenderWindow window(sf::VideoMode(750, 750), "Sprites!");
 
+	//sprites
 	sf::Sprite mySprite;
 	sf::Texture myTexture;
 	sf::IntRect rect[8];
@@ -38,7 +42,7 @@ int main()
 
 	goblinSprite.setTexture(goblinTexture);
 	goblinSprite.setTextureRect(goblin[0]);
-	goblinSprite.setOrigin(15, 16);
+	goblinSprite.setOrigin(26, 16);
 	goblinSprite.setScale(2, 2);
 	goblinSprite.setPosition(100, 100);
 
@@ -61,10 +65,21 @@ int main()
 	sf::Clock clock;
 	int imgCount = 0;
 	float timer = 0;
+
+	sf::Clock batClock;
+	int ImgCountBat = 0;
+	float batTimer = 0;
+
+	sf::Clock goblinClock;
+	int imgCountGoblin = 0;
+	float goblinTimer = 0;
+
 	bool movingUp = false;
 	bool movingDown = false;
 	bool movingLeft = false;
 	bool movingRight = false;
+	bool batMoving = false;
+	bool goblinMoving = false;
 
 	while (window.isOpen())
 	{
@@ -116,17 +131,18 @@ int main()
 				}
 			}
 		}
+		//player speed
 		sf::Vector2f movement(0, 0);
 		if (movingUp)
-			movement.y -= 0.1f;
+			movement.y -= 0.25f;
 		if (movingDown)
-			movement.y -= -0.1f;
+			movement.y -= -0.25f;
 		if (movingLeft)
-			movement.x -= 0.1f;
+			movement.x -= 0.25f;
 		if (movingRight)
-			movement.x -= -0.1f;
+			movement.x -= -0.25f;
 		mySprite.move(movement);
-
+		//animate on command
 		if (movingLeft || movingRight || movingUp || movingDown) {
 			timer = clock.getElapsedTime().asSeconds();
 			if (timer > 0.25f)
@@ -141,14 +157,103 @@ int main()
 		else
 			imgCount = 0;
 
+		//goblin ai
+		if (mySprite.getPosition().x > goblinSprite.getPosition().x) {
+			goblinSprite.move(enemySpeed, 0);
+			goblinMoving = true;
+		}
+		else if (mySprite.getPosition().x < goblinSprite.getPosition().x) {
+			goblinSprite.move(-enemySpeed, 0);
+			goblinMoving = true;
+		}
+		else {
+			goblinMoving = false;
+		}
+
+		if (mySprite.getPosition().y > goblinSprite.getPosition().y) {
+			goblinSprite.move(0, enemySpeed);
+			goblinMoving = true;
+		}
+		else if (mySprite.getPosition().y < goblinSprite.getPosition().y) {
+			goblinSprite.move(0, -enemySpeed);
+			goblinMoving = true;
+		}
+		else {
+			goblinMoving = false;
+		}
+		if (goblinMoving) {
+			goblinTimer = goblinClock.getElapsedTime().asSeconds();
+			if (goblinTimer > 0.25f)
+			{
+				if (imgCountGoblin < 3)
+					imgCountGoblin++;
+				else
+					imgCountGoblin = 0;
+				goblinClock.restart();
+			}
+		}
+		else
+			imgCountGoblin = 0;
+
 		
-		
+		//bat ai
+		if (mySprite.getPosition().x > batSprite.getPosition().x) {
+			batSprite.move(enemySpeed, 0);
+			batMoving = true;
+			if (mySprite.getScale().x > 0)
+				mySprite.scale(-1, 1);
+		}
+		else if (mySprite.getPosition().x < batSprite.getPosition().x) {
+			batSprite.move(-enemySpeed, 0);
+			batMoving = true;
+		}
+		else {
+			batMoving = false;
+		}
+
+		if (mySprite.getPosition().y > batSprite.getPosition().y) {
+			batSprite.move(0, enemySpeed);
+			batMoving = true;
+		}
+		else if (mySprite.getPosition().y < batSprite.getPosition().y) {
+			batSprite.move(0, -enemySpeed);
+			batMoving = true;
+		}
+		else {
+			batMoving = false;
+		}
+
+		if (batMoving) {
+			batTimer = batClock.getElapsedTime().asSeconds();
+			if (batTimer > 0.25f)
+			{
+				if (ImgCountBat < 3)
+					ImgCountBat++;
+				else
+					ImgCountBat = 0;
+				batClock.restart();
+			}
+		}
+		else
+			ImgCountBat = 0;
+
+		//animation on player movement code
 		if (movingLeft || movingRight || movingUp || movingDown)
 			mySprite.setTextureRect(rect[imgCount]);
 		else
 			mySprite.setTextureRect(rect[0]);
+		//animation on bat movement code
+		if (batMoving)
+			batSprite.setTextureRect(bat[ImgCountBat]);
+		else
+			batSprite.setTextureRect(bat[0]);
+		//animation on bat movement code
+		if (goblinMoving)
+			goblinSprite.setTextureRect(goblin[imgCountGoblin]);
+		else
+			goblinSprite.setTextureRect(goblin[0]);
 
-		window.clear(sf::Color::Green);
+		window.clear(sf::Color::Blue);
 		window.draw(mySprite);
 		window.draw(goblinSprite);
 		window.draw(batSprite);
