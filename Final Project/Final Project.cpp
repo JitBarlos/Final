@@ -2,14 +2,34 @@
 #include <cstring>
 #include <SFML\Graphics.hpp>
 #include <SFML\Graphics\Rect.hpp>
+#include <vector>
 
-float enemySpeed = 0.1;
+float goblinSpeed = 0.1;
+float batSpeed = 0.12;
+int playerHealth = 20;
+
 
 int main()
 {
-	sf::RenderWindow window(sf::VideoMode(750, 750), "Sprites!");
+	sf::RenderWindow window(sf::VideoMode(850, 850), "Sprites!");
 
 	//sprites
+	sf::Sprite middleBackround;
+	sf::Texture middleBackroundTexture;
+	sf::IntRect backOne[4];
+	backOne[0] = sf::IntRect(0, 0, 32, 32);
+	backOne[1] = sf::IntRect(32, 0, 32, 32);
+	backOne[2] = sf::IntRect(0, 32, 32, 32);
+	backOne[3] = sf::IntRect(32, 32, 32, 32);
+
+	middleBackroundTexture.loadFromFile("Texture/MiddleBackround.png");
+
+	middleBackround.setTexture(middleBackroundTexture);
+	middleBackround.setTextureRect(backOne[0]);
+	middleBackround.setOrigin(0, 0);
+	middleBackround.setScale(26.55, 26.55);
+	middleBackround.setPosition(0, 0);
+	
 	sf::Sprite mySprite;
 	sf::Texture myTexture;
 	sf::IntRect rect[8];
@@ -62,6 +82,10 @@ int main()
 	batSprite.setScale(1.5, 1.5);
 	batSprite.setPosition(300, 100);
 
+	sf::Clock backgroundClock;
+	int imgCountBackOn = 0;
+	float backOneTimer = 0;
+	
 	sf::Clock clock;
 	int imgCount = 0;
 	float timer = 0;
@@ -73,6 +97,12 @@ int main()
 	sf::Clock goblinClock;
 	int imgCountGoblin = 0;
 	float goblinTimer = 0;
+
+	sf::Clock goblinAttackClock;
+	float goblinAttackTimer = 0;
+
+	sf::Clock batAttackClock;
+	float batAttackTimer = 0;
 
 	bool movingUp = false;
 	bool movingDown = false;
@@ -131,6 +161,47 @@ int main()
 				}
 			}
 		}
+		//background One
+		backOneTimer = backgroundClock.getElapsedTime().asSeconds();
+		if (backOneTimer > 0.7f)
+		{
+			if (imgCountBackOn < 3)
+				imgCountBackOn++;
+			else
+				imgCountBackOn = 0;
+			backgroundClock.restart();
+		}
+		middleBackround.setTextureRect(backOne[imgCountBackOn]);
+
+		//Collision for goblin fighting
+		if (goblinSprite.getGlobalBounds().intersects(mySprite.getGlobalBounds())) {
+		goblinAttackTimer = goblinAttackClock.getElapsedTime().asSeconds();
+
+			if (goblinAttackTimer > 1.5) {
+				playerHealth -= 2;
+				goblinAttackClock.restart();
+				std::cout << "hit";
+				std::cout << playerHealth << std::endl;
+
+			}
+		}
+		//Collision for bat fighting
+		if (batSprite.getGlobalBounds().intersects(mySprite.getGlobalBounds())) {
+			batAttackTimer = batAttackClock.getElapsedTime().asSeconds();
+
+			if (batAttackTimer > 1.5)
+			{
+				playerHealth -= 2;
+				batAttackClock.restart();
+				std::cout << "hit";
+				std::cout << playerHealth << std::endl;
+			}
+		}
+		//Dead
+		if (playerHealth == 0) {
+			
+		}
+
 		//player speed
 		sf::Vector2f movement(0, 0);
 		if (movingUp)
@@ -142,6 +213,7 @@ int main()
 		if (movingRight)
 			movement.x -= -0.25f;
 		mySprite.move(movement);
+
 		//animate on command
 		if (movingLeft || movingRight || movingUp || movingDown) {
 			timer = clock.getElapsedTime().asSeconds();
@@ -159,23 +231,27 @@ int main()
 
 		//goblin ai
 		if (mySprite.getPosition().x > goblinSprite.getPosition().x) {
-			goblinSprite.move(enemySpeed, 0);
+			goblinSprite.move(goblinSpeed, 0);
 			goblinMoving = true;
+			if (goblinSprite.getScale().x > 0)
+				goblinSprite.scale(-1, 1);
 		}
 		else if (mySprite.getPosition().x < goblinSprite.getPosition().x) {
-			goblinSprite.move(-enemySpeed, 0);
+			goblinSprite.move(-goblinSpeed, 0);
 			goblinMoving = true;
+			if (goblinSprite.getScale().x < 0)
+				goblinSprite.scale(-1, 1);
 		}
 		else {
 			goblinMoving = false;
 		}
 
 		if (mySprite.getPosition().y > goblinSprite.getPosition().y) {
-			goblinSprite.move(0, enemySpeed);
+			goblinSprite.move(0, goblinSpeed);
 			goblinMoving = true;
 		}
 		else if (mySprite.getPosition().y < goblinSprite.getPosition().y) {
-			goblinSprite.move(0, -enemySpeed);
+			goblinSprite.move(0, -goblinSpeed);
 			goblinMoving = true;
 		}
 		else {
@@ -195,16 +271,14 @@ int main()
 		else
 			imgCountGoblin = 0;
 
-		
+
 		//bat ai
 		if (mySprite.getPosition().x > batSprite.getPosition().x) {
-			batSprite.move(enemySpeed, 0);
+			batSprite.move(batSpeed, 0);
 			batMoving = true;
-			if (mySprite.getScale().x > 0)
-				mySprite.scale(-1, 1);
 		}
 		else if (mySprite.getPosition().x < batSprite.getPosition().x) {
-			batSprite.move(-enemySpeed, 0);
+			batSprite.move(-batSpeed, 0);
 			batMoving = true;
 		}
 		else {
@@ -212,11 +286,11 @@ int main()
 		}
 
 		if (mySprite.getPosition().y > batSprite.getPosition().y) {
-			batSprite.move(0, enemySpeed);
+			batSprite.move(0, batSpeed);
 			batMoving = true;
 		}
 		else if (mySprite.getPosition().y < batSprite.getPosition().y) {
-			batSprite.move(0, -enemySpeed);
+			batSprite.move(0, -batSpeed);
 			batMoving = true;
 		}
 		else {
@@ -254,6 +328,7 @@ int main()
 			goblinSprite.setTextureRect(goblin[0]);
 
 		window.clear(sf::Color::Blue);
+		window.draw(middleBackround);
 		window.draw(mySprite);
 		window.draw(goblinSprite);
 		window.draw(batSprite);
